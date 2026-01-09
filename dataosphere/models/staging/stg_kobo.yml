@@ -326,6 +326,25 @@ models:
               config:
                 severity: error
                 store_failures: true
+      
+      - name: member_had_diarrhoea_14d
+        description: |
+          Tri-state diarrhoea indicator for the household member over the last 14 days, normalised for reporting.
+          Values:
+            - 'yes': member reported diarrhoea in the last 14 days
+            - 'no': member reported no diarrhoea in the last 14 days
+            - 'unknown': response missing/invalid/unparseable in the source (do not assume 'no')
+
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'yes'
+                  - 'no'
+                  - 'unknown'
+              config:
+                severity: error
+                store_failures: true
 
   - name: stg_kobo_water_point
     description: |

@@ -7,7 +7,6 @@ with grouped as (
         count(distinct member_index) as member_count,
         sum(cast(member_had_diarrhoea_14d as number(1,0))) as diarrhoea_case_count_14d,
         boolor_agg(member_has_diarrhoea_14d) as has_any_diarrhoea_14d_members,
-        
     from
         {{ ref('stg_kobo_member') }}
     group by

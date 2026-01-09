@@ -30,9 +30,12 @@ with source as (
         trim(try_cast(member_name as varchar)) as member_name,
         lower(trim(try_cast(sex as varchar))) as member_sex,
 
-        -- boolean
-        try_cast(had_diarrhoea_14d as boolean) as member_had_diarrhoea_14d,
-
+        case
+            when try_cast(had_diarrhoea_14d as boolean) = true then 'yes'
+            when try_cast(had_diarrhoea_14d as boolean) = false then 'no'
+            else 'unknown'
+        end as member_had_diarrhoea_14d,
+        
         -- audit/ lineage
         _loaded_at AS record_loaded_at,
         try_cast(_batch_id AS VARCHAR) AS batch_id,
