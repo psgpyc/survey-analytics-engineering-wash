@@ -1,7 +1,165 @@
 version: 2
 
-
 models:
-  - name: int_household_submission
+  - name: int_household_event
     description: |
-      
+      Household survey event table combining household responses with submission context.
+      Grain: 1 row per (household_id, submission_id). Assumes upstream staging models are already deduped and relationship-tested.
+      Purpose: Provides the event-scoped household record used to build downstream facts/KPIs (e.g., safe drinking water by ward and period).
+      Primary Key: household_id, submission_id.
+      Relationship notes: submission_id links to the submission event; ward_id and submitted_at are sourced from the submission model to support geographic and time-based reporting.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - household_id
+              - submission_id
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: household_id
+        description: |
+          Household identifier as captured in the survey instrument.
+          This is the core household entity key used to join household-level attributes and to roll up member outcomes for household KPIs.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: submission_id
+        description: |
+          Submission event identifier (FK to stg_kobo_submission.submission_id).
+          Represents the specific survey submission instance in which this household record was captured (supports repeated/incremental survey waves per household).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+          - relationships:
+              arguments:
+                to: ref('stg_kobo_submission')
+                field: submission_id
+              config:
+                severity: error
+                store_failures: true
+
+      - name: ward_id
+        description: |
+          Ward identifier associated with the submission event (source of truth: submission).
+          Used for ward-level aggregation and geographic disaggregation of WASH indicators.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: submitted_at
+        description: |
+          Timestamp when the submission was recorded as submitted (device/user submit time as standardised in staging).
+          Used as the event timestamp for period-based reporting (daily/weekly/monthly) and time-windowed KPI calculations.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+  - name: int_submission_submitted
+    description: |
+      Submitted-only submission events.
+      Grain: 1 row per submission_id.
+      Purpose: Provides the “reportable submission” contract (status='submitted') for downstream joins and KPI models,
+      so draft/incomplete submissions are excluded from analytical reporting.
+      Notes: Downstream models that represent official counts or time-based KPIs should join to this model (or filter equivalently).
+
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "status = 'submitted'"
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: submission_id
+        description: |
+          Primary key for a submitted submission event.
+          Unique identifier for the submission instance used as the join key for event-scoped household, member, and water point records.
+        data_tests: 
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+          - unique:
+              config:
+                severity: error
+                store_failures: true
+
+  - name: int_household_member_health_rollup
+    description: |
+      Household-level member health rollup derived from the member repeat-group.
+      Grain: 1 row per (household_id, submission_id).
+      Purpose: Aggregates member roster health outcomes to the household submission event level,
+      enabling household KPIs such as “no diarrhoea reported in last 14 days” to be computed reliably.
+      Notes: This model is intended to be joined into household event/fact tables using (household_id, submission_id).
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - household_id
+              - submission_id
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "diarrhoea_case_count_14d >= 0 and diarrhoea_case_count_14d <= member_count "
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: household_id
+        description: |
+          Household identifier (FK to household grain in staging).
+          Used with submission_id to anchor member rollups to a specific household survey event.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: submission_id
+        description: |
+          Submission identifier (FK to submission events).
+          Ensures member rollups are scoped to the specific submission wave in which the roster and health responses were captured.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: member_count
+        description: |
+          Count of distinct household members captured in the submission (based on member_index).
+          Represents the roster size used as the denominator for household-level member-derived health metrics.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: diarrhoea_case_count_14d
+        description: |
+          Number of household members reported as having diarrhoea in the last 14 days for this submission event.
+          Used to derive household flags such as “has any diarrhoea” and “has no diarrhoea” in downstream KPI logic.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true

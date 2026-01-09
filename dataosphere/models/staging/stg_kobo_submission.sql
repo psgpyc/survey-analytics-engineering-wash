@@ -12,7 +12,9 @@ from
     source
 where
     dq_missing_submission_id = false
+    and status = 'submitted'
     and dq_submitted_missing_submitted_at = false
     and dq_invalid_gps = false
     and is_deleted = false
+
 
