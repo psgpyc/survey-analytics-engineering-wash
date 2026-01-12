@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: fact_household_wash_event
+    description: |
+      Household-level WASH fact table at survey-event grain.
+      Grain: 1 row per (household_id, submission_id).
+      Purpose: Provides the KPI-ready event record to report “safe drinking water households” by ward and time period.
+      KPI flag: is_safe_drinking is derived from safe source + safe treatment + no diarrhoea (14 days) rules.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Enforce declared grain: each household survey event must be unique at (household_id × submission_id)."
+            combination_of_columns:
+              - household_id
+              - submission_id
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "KPI contract check: is_safe_drinking must exactly equal the AND of its three input flags (no hidden logic drift)."
+            expression: "is_safe_drinking = (has_safe_primary_source and has_safe_water_filter and has_no_diarrhoea_14d_members)"
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Fact eligibility rule: only include household-events where at least one household member record exists for the event."
+            expression: "member_count >= 1"
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: household_id
+        description: |
+          Household identifier as captured in the survey instrument.
+          Part of the primary key for this fact table and used to join to downstream household-level reporting entities.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: submission_id
+        description: |
+          Submission event identifier (FK to the submitted survey event).
+          Part of the primary key for this fact table and provides event-time context for period-based reporting.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: has_safe_water_filter
+        description: |
+          Derived flag indicating whether the household’s reported water treatment / filter type is classified as “safe”
+          according to the project’s SAFE_WATER_FILTER_TYPES contract.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: has_safe_primary_source
+        description: |
+          Derived flag indicating whether the household’s primary drinking water source is classified as “safe”
+          according to the project’s SAFE_PRIMARY_WATER_SOURCES contract.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: is_safe_drinking
+        description: |
+          Final KPI flag for safe drinking water at household-event grain.
+          True only when: safe primary source AND safe treatment/filter AND no diarrhoea in last 14 days members.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
