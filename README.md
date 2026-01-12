@@ -1,43 +1,96 @@
 # WASH Analytics Engineering (dbt + Snowflake)
 
-Production-grade analytics engineering project for Kobo-style WASH survey data in Snowflake using dbt.
+Contract-first analytics engineering project for Kobo-style WASH survey data in Snowflake using dbt.
 
-This repo demonstrates a contract-first approach:
-- RAW sources defined via `sources.yml` (freshness + metadata)
-- Staging models that standardise types, normalise values, dedupe, and generate DQ flags
-- Data tests with stored failures for accountability and auditability
-- Pattern for rejected/quarantined records to support replayability and clean downstream marts
+This repo demonstrates how to take **existing RAW tables in Snowflake** and build **join-safe, auditable, replayable** analytics models—starting with staging standardisation + data quality enforcement, moving through intermediate integration models, and producing BI-ready marts.
+
+---
+
+## What this repo shows
+
+- **Contract-first sources** (`sources.yml`) with metadata + freshness expectations  
+- **Staging models** (`stg_`) that:
+  - cast to predictable data types (safe casting)
+  - normalise categoricals (trim/lower + canonical sets)
+  - dedupe to declared grains
+  - generate data quality flags to support quarantine/replay
+- **Data tests** with `store_failures` enabled for auditability
+- **Rejected / quarantined patterns** to keep clean downstream marts while retaining bad records for triage and replay
+- **A KPI-ready mart** for “safe drinking water” classification at household-event grain
 
 ---
 
 ## Architecture (high level)
 
-S3 (raw JSON exports) → Snowpipe → Snowflake RAW tables → dbt STAGING (`stg_`) → (next) INTERMEDIATE (`int_`) → (next) MARTS (`dim_` / `fct_`)
+`Snowflake RAW tables → dbt STAGING (stg_) → dbt INTERMEDIATE (int_) → dbt MARTS (dim_/fct_)`
 
-Key production principles:
-- Replayable loads (raw is immutable, processed is derived)
-- Accountability (store test failures, keep rejected rows)
-- Deterministic modelling (typed + canonicalised staging)
-- Join-safe grains (staging grains explicitly defined and tested)
+Core principles:
+
+- **Replayable modelling**: downstream models are derived and rebuildable  
+- **Accountability**: failures are stored; rejected rows are inspectable  
+- **Deterministic modelling**: typed + canonicalised staging reduces ambiguity  
+- **Join-safe grains**: each model declares and enforces its grain via tests  
 
 ---
 
-## Project contents
+## Data domain
 
 ### RAW sources (Snowflake)
-Kobo-style tables:
-- `kobo_submission` – 1 row per submission
-- `kobo_household` – 1 row per household
-- `kobo_member` – repeat group members (composite grain)
-- `kobo_water_point` – water point observations (composite grain)
+Kobo-style tables modelled as sources:
 
-### Staging models (dbt)
+- `kobo_submission` — 1 row per submission  
+- `kobo_household` — household section captured within a submission (event-scoped)  
+- `kobo_member` — repeat-group members (composite grain)  
+- `kobo_water_point` — water point observations (composite grain)  
+
+> Note: household and member data are **event-scoped** (captured per submission). Households can appear across multiple submissions over time.
+
+---
+
+## dbt layers in this repo
+
+### 1) Staging (`models/staging`)
 Each staging model:
-- casts to predictable data types (Snowflake safe casting where relevant)
+
+- casts to stable Snowflake types (safe casting where relevant)
 - normalises strings (trim/lower)
 - dedupes by declared grain using `record_loaded_at` ordering
-- adds DQ flags to support quarantine
-- includes dbt tests: `not_null`, `unique`, `relationships`, `unique_together` ,and expression tests
+- adds DQ flags to support quarantine/replay
+- includes tests such as: `not_null`, `unique`, `relationships`, composite uniqueness, and expression checks
+
+Main staging models:
+
+- `stg_kobo_submission`
+- `stg_kobo_household`
+- `stg_kobo_member`
+- `stg_kobo_water_point`
+
+### 2) Intermediate (`models/intermediate`)
+Intermediate models reshape staging outputs into analytical grains and rollups used by marts, for example:
+
+- submission filters (e.g., submitted-only)
+- household event tables (household + submission context)
+- member health rollups at `household_id × submission_id`
+- integration tables that feed downstream KPI facts
+
+### 3) Marts (`models/marts`)
+BI-ready facts/dimensions and KPI tables.
+
+Current mart:
+
+- `fact_household_wash_event` — household-event grain (`household_id × submission_id`) with safe drinking water flags and KPI classification
+
+---
+
+## KPI: “Safe drinking water” (high level)
+
+Household-event is classified as safe when all hold:
+
+- **safe primary water source** (canonical set)
+- **safe water filter/treatment** (canonical set)
+- **no diarrhoea in last 14 days** (member rollup; unknown treated as not-safe unless explicitly defined otherwise)
+
+KPI logic is centralised using macros (safe lists) so definitions are explicit and version-controlled.
 
 ---
 
@@ -66,14 +119,6 @@ Each staging model:
 - Contract tests ensure keys, relationships, and canonical values hold
 - Store failures is enabled for audit tables, making bad records inspectable
 - Rejected records can be routed to `__rejected` models for replay/triage
-
----
-
-## Next steps (planned)
-
-- Intermediate integration models (`int_...`) to reshape staging into analytical grains
-- Dimensional marts (`dim_...`, `fct_...`) for BI dashboards and KPI reporting
-- Monitoring models (`mon_...`) for rejection trends and freshness dashboards
 
 ---
 
