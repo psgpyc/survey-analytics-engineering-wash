@@ -8,6 +8,9 @@ models:
       Purpose: Provides the KPI-ready event record to report “safe drinking water households” by ward and time period.
       KPI flag: is_safe_drinking is derived from safe source + safe treatment + no diarrhoea (14 days) rules.
 
+    config:
+      tags: ['mart', 'wash', 'kobo']
+    
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -80,6 +83,95 @@ models:
         description: |
           Final KPI flag for safe drinking water at household-event grain.
           True only when: safe primary source AND safe treatment/filter AND no diarrhoea in last 14 days members.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+  - name: fact_agg_safe_drinking_ward_day
+    description: |
+      Ward-by-day aggregate mart for safe drinking water reporting.
+      Grain: 1 row per (ward_id, event_date).
+      Purpose: Provides daily ward-level totals and safe counts derived from fact_household_wash_event,
+      so BI tools can consume a pre-aggregated, KPI-ready dataset without re-implementing business logic.
+      Notes: event_date is derived from submitted_at (survey-event timestamp) in the upstream fact.
+
+    config:
+      tags: ['mart', 'wash', 'kobo']
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Enforce declared grain: each ward/day combination must be unique."
+            combination_of_columns: 
+              - ward_id
+              - event_date
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: safe household-events cannot exceed total household-events within the same ward/day."
+            expression: "household_events_safe <= household_events_total"
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: pct_safe must be a valid proportion between 0 and 1 (inclusive)."
+            expression: "pct_safe between 0 and 1"
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: ward_id
+        description: |
+          Ward identifier used for geographic aggregation.
+          This is the reporting slice for ward-level WASH indicators.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+      
+      - name: event_date
+        description: |
+          Survey event date derived from the submission timestamp (submitted_at) in the upstream fact.
+          Defines the daily reporting period for ward-level KPI aggregation.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: household_events_total
+        description: |
+          Total number of household survey events recorded for the ward on the given event_date.
+          Denominator for pct_safe.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: household_events_safe
+        description: |
+          Number of household survey events classified as safe drinking water for the ward on the given event_date.
+          Numerator for pct_safe.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: pct_safe
+        description: |
+          Proportion of safe household survey events for the ward and event_date.
+          Computed as household_events_safe / household_events_total (with zero-safe handling upstream).
         data_tests:
           - not_null:
               config:

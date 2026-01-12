@@ -61,6 +61,19 @@ WITH source AS (
         (primary_water_source IS NULL OR trim(primary_water_source) = '') AS dq_missing_blank_primary_water_source,
 
         (
+            submission_id is not null
+            and
+            not exists (
+                select
+                    1
+                from
+                    {{ ref('stg_kobo_submission') }} s
+                where
+                    s.submission_id = standardised.submission_id
+            )
+        ) as dq_orphan_submission_id,
+
+        (
             hh_size_reported IS NOT NULL 
             AND
             ( 

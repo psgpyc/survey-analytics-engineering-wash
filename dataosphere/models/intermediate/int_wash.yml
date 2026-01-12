@@ -9,6 +9,9 @@ models:
       Primary Key: household_id, submission_id.
       Relationship notes: submission_id links to the submission event; ward_id and submitted_at are sourced from the submission model to support geographic and time-based reporting.
 
+    config:
+      tags: ['int', 'wash', 'kobo']
+
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -75,6 +78,9 @@ models:
       so draft/incomplete submissions are excluded from analytical reporting.
       Notes: Downstream models that represent official counts or time-based KPIs should join to this model (or filter equivalently).
 
+    config:
+      tags: ['int', 'wash', 'kobo']
+
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -106,6 +112,9 @@ models:
       enabling household KPIs such as “no diarrhoea reported in last 14 days” to be computed reliably.
       Notes: This model is intended to be joined into household event/fact tables using (household_id, submission_id).
 
+    config:
+      tags: ['int', 'wash', 'kobo']
+    
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -183,8 +192,11 @@ models:
         - Only includes household-events with an associated member roster (inner-join contract).
         - Assumes upstream staging models enforce typing, deduplication, and soft-delete handling.
 
+    config:
+      tags: ['int', 'wash', 'kobo']
+    
     data_tests:
-      - dbutils.unique_combination_of_columns:
+      - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - household_id
@@ -193,22 +205,22 @@ models:
             severity: error
             store_failures: true
 
-      - dbutils.expression_is_true:
+      - dbt_utils.expression_is_true:
           arguments:
             description: |
               Ensure diarrhoea tri-state rollup is internally consistent: the household member_count equals the sum of yes/no/unknown counts.
               This prevents double-counting and validates that every member record contributes exactly one diarrhoea status.
-            expression: "member_count = (total_diarrhoea_case_count_14d + total_unknown_diarrhoea_case_count_14d + total_no_diarrhoea_case_count_14d)"
+            expression: "member_count = (total_diarrhoea_case_count_14d + total_unknown_diarrhoea_count_14d + total_no_diarrhoea_count_14d)"
           config:
             severity: error
             store_failures: true
       
-      - dbutils.expression_is_true:
+      - dbt_utils.expression_is_true:
           arguments:
             description: |
               Enforce “no diarrhoea” household rule: the flag must be true only when there are zero 'yes' cases and zero 'unknown' cases,
               and all recorded member statuses are 'no'. This ensures we never classify a household as safe when diarrhoea status is unknown.
-            expression: "has_no_diarrhoea_14d_members = ((total_diarrhoea_case_count_14d = 0 and total_unknown_diarrhoea_case_count_14d = 0) and (total_no_diarrhoea_case_count_14d = member_count))"
+            expression: "has_no_diarrhoea_14d_members = ((total_diarrhoea_case_count_14d = 0 and total_unknown_diarrhoea_count_14d = 0) and (total_no_diarrhoea_count_14d = member_count))"
           config:
             severity: error
             store_failure: true

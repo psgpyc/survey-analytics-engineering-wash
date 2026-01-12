@@ -14,6 +14,7 @@ where
     is_deleted = true
     or dq_missing_blank_household_id = true
     or dq_missing_blank_submission_id = true
+    or dq_orphan_submission_id = true
     or dq_missing_ward_id = true
     or dq_missing_blank_water_filter_type = true
     or dq_missing_blank_primary_water_source = true

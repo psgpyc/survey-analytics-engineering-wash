@@ -14,6 +14,7 @@ where
     is_deleted = false
     and dq_missing_blank_household_id = false
     and dq_missing_blank_submission_id = false
+    and dq_orphan_submission_id = false
     and dq_missing_ward_id = false
     and dq_missing_blank_water_filter_type = false
     and dq_missing_blank_primary_water_source = false
