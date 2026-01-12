@@ -118,7 +118,7 @@ models:
 
       - dbt_utils.expression_is_true:
           arguments:
-            expression: "diarrhoea_case_count_14d >= 0 and diarrhoea_case_count_14d <= member_count "
+            expression: "total_diarrhoea_case_count_14d >= 0 and total_diarrhoea_case_count_14d <= member_count "
           config:
             severity: error
             store_failures: true
@@ -154,7 +154,7 @@ models:
                 severity: error
                 store_failures: true
 
-      - name: diarrhoea_case_count_14d
+      - name: total_diarrhoea_case_count_14d
         description: |
           Number of household members reported as having diarrhoea in the last 14 days for this submission event.
           Used to derive household flags such as “has any diarrhoea” and “has no diarrhoea” in downstream KPI logic.
@@ -163,3 +163,90 @@ models:
               config:
                 severity: error
                 store_failures: true
+
+      - name: has_no_diarrhoea_14d_members
+        description: |
+          Number of household members reported as having diarrhoea in the last 14 days for this submission event.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+  - name: int_household_safe_inputs
+    description: |
+      Intermediate “safe drinking water” input table at household-event grain.
+      Grain: 1 row per (household_id, submission_id).
+      Purpose: Provides the minimum set of standardised and rolled-up fields required to compute the downstream safe drinking water KPI
+      (e.g., safe source, safe filter, and diarrhoea-based household health condition) by ward and reporting period.
+      Notes:
+        - Only includes household-events with an associated member roster (inner-join contract).
+        - Assumes upstream staging models enforce typing, deduplication, and soft-delete handling.
+
+    data_tests:
+      - dbutils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - household_id
+              - submission_id
+          config:
+            severity: error
+            store_failures: true
+
+      - dbutils.expression_is_true:
+          arguments:
+            description: |
+              Ensure diarrhoea tri-state rollup is internally consistent: the household member_count equals the sum of yes/no/unknown counts.
+              This prevents double-counting and validates that every member record contributes exactly one diarrhoea status.
+            expression: "member_count = (total_diarrhoea_case_count_14d + total_unknown_diarrhoea_case_count_14d + total_no_diarrhoea_case_count_14d)"
+          config:
+            severity: error
+            store_failures: true
+      
+      - dbutils.expression_is_true:
+          arguments:
+            description: |
+              Enforce “no diarrhoea” household rule: the flag must be true only when there are zero 'yes' cases and zero 'unknown' cases,
+              and all recorded member statuses are 'no'. This ensures we never classify a household as safe when diarrhoea status is unknown.
+            expression: "has_no_diarrhoea_14d_members = ((total_diarrhoea_case_count_14d = 0 and total_unknown_diarrhoea_case_count_14d = 0) and (total_no_diarrhoea_case_count_14d = member_count))"
+          config:
+            severity: error
+            store_failure: true
+
+    columns:
+      - name: household_id
+        description: |
+          Household identifier as captured in the survey instrument.
+          Part of the declared grain for this model and the primary join key to household-level attributes and downstream household facts.
+        data_tests: 
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: submission_id
+        description: |
+          Submission event identifier representing the specific survey wave/instance in which the household record was captured.
+          Part of the declared grain for this model and used to support period-based reporting (via submitted_at/collection time in upstream models).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      - name: has_no_diarrhoea_14d_members
+        description: |
+          Household-level derived flag indicating that no household members reported diarrhoea in the last 14 days
+          and that there are no unknown diarrhoea statuses within the household roster for this submission.
+          This field is a key input to the downstream “safe drinking water household” classification.
+        data_tests: 
+          - not_null:
+              config:
+                severity: error
+                store_failures: true
+
+      
+
+
+
+
