@@ -11,6 +11,7 @@ with source as (
         water_source_functional,
         record_loaded_at,
         batch_id,
+        is_deleted,
         source_file,
         dq_missing_blank_water_point_id,
         dq_missing_blank_submission_id,

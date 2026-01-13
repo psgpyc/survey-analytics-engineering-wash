@@ -205,3 +205,137 @@ models:
               config:
                 severity: warn
                 store_failures: true
+
+  - name: mon_unknown_diarrhoea_rate_ward_day
+    description: |
+      Daily monitoring view for diarrhoea-response completeness by ward.
+      Grain: 1 row per (ward_id, event_date).
+      Purpose: Quantifies how often member diarrhoea status is recorded as 'unknown' so data collectors and analysts can spot ward/day patterns in missingness and follow up operationally.
+      Interpretation: A higher unknown rate indicates weaker survey completeness or data capture issues for diarrhoea reporting, and should trigger triage before using downstream “safe drinking water” KPIs.
+
+    config:
+      tags: ["monitoring", "wash", "kobo"]
+      
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Ensure only one unknown-rate record exists per model per day."
+            combination_of_columns:
+              - ward_id
+              - event_date
+          config:
+            severity: warn
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: unknown diarrhoea count must be non-negative."
+            expression: "unknown_diarrhoea_count >= 0"
+          config:
+            severity: warn
+            store_failures: true
+
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: unknown rate must fall between 0 and 1 (inclusive)."
+            expression: "rejection_rate between 0 and 1"
+          config:
+            severity: warn
+            store_failures: true
+
+
+  - name: mon_rejection_by_reason_day
+    description: |
+      Daily rejection counts by model and reason bucket.
+      Grain: 1 row per (model_name, base_model_name, event_date, reason_bucket).
+      Purpose: Provides the “why” slicer for DQ monitoring so teams can quickly see whether rejections are driven by missing keys, orphan FKs, invalid canonical values, invalid ranges, unknown/other categories, soft deletes, or other issues.
+      Notes: reason_bucket is derived from model-specific DQ flags inside each <base>__rejected model. Only one bucket is assigned per rejected row based on precedence.
+
+    config:
+      tags: ["monitoring", "wash", "kobo"]
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Enforce monitoring grain: only one rejected_rows value per (model_name, event_date, reason_bucket)."
+            combination_of_columns:
+              - base_model_name
+              - event_date
+              - reason_bucket
+          config:
+            severity: error
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: rejected_rows must be non-negative."
+            expression: "rejected_rows >= 0"
+          config:
+            severity: warn
+            store_failures: true
+
+    columns:
+      - name: base_model_name
+        description: |
+          Canonical base model identifier derived from the rejected model naming convention.
+          Example: stg_kobo_household from stg_kobo_household__rejected.
+          Used to align rejected/base counts across monitoring models.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: event_date
+        description: |
+          Reporting date for monitoring aggregation, derived from record_loaded_at.
+          Used as the day grain for rejections trending.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: reason_bucket
+        description: |
+          Standardised rejection reason category (one per rejected row, based on precedence).
+          Allowed buckets:
+            - missing_keys
+            - orphan_fk
+            - invalid_required_field
+            - invalid_canonical
+            - invalid_range
+            - unknown_other
+            - soft_deleted
+            - other
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+          - accepted_values:
+              arguments:
+                values:
+                  - missing_keys
+                  - orphan_fk
+                  - invalid_required_field
+                  - invalid_canonical
+                  - invalid_range
+                  - unknown_other
+                  - soft_deleted
+                  - other
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: rejected_rows
+        description: |
+          Count of rejected/quarantined rows for the given (model_name, event_date, reason_bucket).
+          Supports slice-and-dice debugging of rejection drivers over time.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
