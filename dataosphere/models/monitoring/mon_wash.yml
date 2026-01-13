@@ -1,0 +1,207 @@
+version: 2
+
+models:
+  - name: mon_rejections_by_model_day
+    description: |
+      Daily rejection counts by model, derived from each model’s rejected/quarantine output.
+      Grain: 1 row per (base_model_name, event_date).
+      Purpose: Operational monitoring to track where bad records are occurring over time and to support fast triage.
+      Notes: base_model_name is the canonical model identifier (e.g., stg_kobo_household) derived from a naming convention like <base>__rejected.
+
+    config:
+      tags: ["monitoring", "wash", "kobo"]
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Enforce monitoring grain: only one rejection count per base model per day."
+            combination_of_columns:
+              - base_model_name
+              - event_date
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: base_model_name
+        description: |
+          Canonical model identifier used to group related model variants (e.g., __base, __rejected) under one name.
+          Example: stg_kobo_household from stg_kobo_household__rejected.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: event_date
+        description: |
+          Reporting date used for daily monitoring aggregation.
+          Must be derived consistently across monitoring models (same timezone + same date logic).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: rejected_row_count
+        description: |
+          Count of rejected/quarantined rows for the model on the given event_date.
+          Used as the numerator for rejection-rate monitoring.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+  - name: mon_total_by_model_day
+    description: |
+      Daily base-row counts by model (the total rows produced by the “base/accepted” model for that day).
+      Grain: 1 row per (base_model_name, event_date).
+      Purpose: Provides the denominator for rejection-rate monitoring and a baseline volume trend per model.
+
+    config:
+      tags: ["monitoring", "wash", "kobo"]
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Enforce monitoring grain: only one base-row count per base model per day."
+            combination_of_columns:
+              - base_model_name
+              - event_date
+          config:
+            severity: error
+            store_failures: true
+
+    columns:
+      - name: base_model_name
+        description: |
+          Canonical model identifier used to group related model variants (e.g., __base, __rejected) under one name.
+          Example: stg_kobo_household from stg_kobo_household__base.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: event_date
+        description: |
+          Reporting date used for daily monitoring aggregation.
+          Must be derived consistently across monitoring models (same timezone + same date logic).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: base_row_count
+        description: |
+          Count of base/accepted rows produced by the model on the given event_date.
+          Used as the denominator for rejection-rate monitoring.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+  - name: mon_rejection_rate_day
+    description: |
+      Daily rejection rate by model.
+      Grain: 1 row per (model_name, event_date) or (base_model_name, event_date) depending on how the model is implemented.
+      Purpose: Monitoring view to quickly identify models/days with unusually high rejection proportions.
+      Definition: rejection_rate = rejected_row_count / base_row_count (with safe division rules).
+
+    config:
+      tags: ["monitoring", "wash", "kobo"]
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            description: "Ensure only one rejection-rate record exists per model per day."
+            combination_of_columns:
+              - model_name
+              - event_date
+          config:
+            severity: warn
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: base row count must be non-negative."
+            expression: "base_row_count >= 0"
+          config:
+            severity: warn
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: rejected row count must be non-negative."
+            expression: "rejected_row_count >= 0"
+          config:
+            severity: warn
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Sanity check: rejection rate must fall between 0 and 1 (inclusive)."
+            expression: "rejection_rate between 0 and 1"
+          config:
+            severity: warn
+            store_failures: true
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            description: "Logical constraint: rejected rows cannot exceed base rows for the same model/day."
+            expression: "rejected_row_count <= base_row_count"
+          config:
+            severity: warn
+            store_failures: true
+
+    columns:
+      - name: model_name
+        description: |
+          Model identifier used in this monitoring output (may be the physical model name or the canonical base_model_name).
+          Must align with the grain enforced in tests.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: event_date
+        description: |
+          Reporting date used for daily monitoring aggregation.
+          Must be derived consistently across monitoring models.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: base_row_count
+        description: |
+          Total base/accepted rows for the model/day (denominator).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: rejected_row_count
+        description: |
+          Total rejected/quarantined rows for the model/day (numerator).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: rejection_rate
+        description: |
+          Share of rows rejected for the model/day.
+          Computed as rejected_row_count / base_row_count (using safe division rules such as div0).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
