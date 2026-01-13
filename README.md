@@ -89,36 +89,6 @@ dataosphere/
     monitoring-contract.md
 ```
 
----
-
-## Architecture overview
-
-### High level flow
-
-```mermaid
-flowchart TB
-  classDef big fill:#EEF2FF,stroke:#6366F1,stroke-width:2px,color:#111827;
-
-  RAW[RAW]:::big
-  STG[STAGING]:::big
-  INT[INTERMEDIATE]:::big
-  MRT[MARTS]:::big
-  SNP[SNAPSHOTS]:::big
-  REJ[REJECTED]:::big
-  MON[MONITORING]:::big
-
-  RAW --> STG
-  STG --> INT
-  STG --> REJ
-  INT --> MRT
-  INT --> SNP
-  SNP --> MRT
-  STG --> MON
-  REJ --> MON
-  INT --> MON
-  MRT --> MON
-```
-
 ## Modelling principles
 
 ### 1) Contract-first
@@ -174,7 +144,6 @@ For this project’s reporting and monitoring:
 Reason:
 - it is deterministic and always present for warehouse-side reporting in this setup
 
----
 
 ## KPI: Safe drinking water (household-event)
 
@@ -205,7 +174,6 @@ Household is “no diarrhoea” only when:
 Final KPI:
 - `is_safe_drinking = safe_source AND safe_filter AND no_diarrhoea`
 
----
 
 ## Published marts
 
@@ -226,7 +194,6 @@ Eligibility:
 Contract invariant (enforced by tests):
 - `is_safe_drinking = has_safe_primary_source AND has_safe_water_filter AND has_no_diarrhoea_14d_members`
 
----
 
 ### `fact_agg_safe_drinking_ward_day`
 Purpose:
@@ -239,7 +206,6 @@ Must always be true:
 - `household_events_safe <= household_events_total`
 - `pct_safe between 0 and 1`
 
----
 
 ### `dim_household_current`
 Purpose:
@@ -252,7 +218,6 @@ Usage note:
 - joining event facts to current dim answers **current state** questions  
 - it does not represent historical attribute values at the time of each event unless you do a point-in-time join via the snapshot table
 
----
 
 ## Snapshots (SCD2 household history)
 
