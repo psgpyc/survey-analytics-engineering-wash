@@ -96,22 +96,23 @@ dataosphere/
 ### High level flow
 
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 70, "rankSpacing": 90}, "themeVariables": {"fontSize": "16px"}}}%%
+%%{init: {
+  "flowchart": { "nodeSpacing": 90, "rankSpacing": 120 },
+  "themeVariables": { "fontSize": "20px" }
+}}%%
 flowchart TB
 
-  RAW["RAW"]
-  STG["STAGING <br/> (stg_)"]
-  INT["INTERMEDIATE <br/> (int_)"]
-  MRT["MARTS <br/> (dim_ / fact_)"]
-  REJ["REJECTED <br/> (__rejected)"]
-  MON["MONITORING <br/> (mon_)"]
-  SNAP["SNAPSHOTS <br/> (snap_)"]
+RAW["RAW"] --> STG["STAGING (stg_)"]
 
-  RAW --> STG --> INT --> MRT
-  STG --> REJ --> MON
-  INT --> MON
-  MRT --> MON
-  SNAP --> MRT
+STG --> INT["INTERMEDIATE (int_)"]
+STG --> REJ["REJECTED / QUARANTINE (__rejected)"]
+
+INT --> MRT["MARTS (dim_ / fact_)"]
+SNAP["SNAPSHOTS (snap_)"] --> MRT
+
+REJ --> MON["MONITORING (mon_)"]
+INT --> MON
+MRT --> MON
 ```
 
 ## Modelling principles
