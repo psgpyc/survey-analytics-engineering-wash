@@ -97,12 +97,12 @@ dataosphere/
 
 ```mermaid
 flowchart LR
-  RAW[(Snowflake RAW tables)]
-  STG[dbt STAGING\nstg_*]
-  INT[dbt INTERMEDIATE\nint_*]
-  MARTS[dbt MARTS\ndim_ / fact_]
-  MON[dbt MONITORING\nmon_*]
-  SNAP[dbt SNAPSHOTS\nSCD2 history]
+  RAW[(RAW)]
+  STG[STAGING: stg_*]
+  INT[INTERMEDIATE: int_*]
+  MARTS[ARTS: dim_ / fact_]
+  MON[MONITORING: mon_*]
+  SNAP[SNAPSHOTS: SCD2 history]
 
   RAW --> STG --> INT --> MARTS
   STG --> MON
