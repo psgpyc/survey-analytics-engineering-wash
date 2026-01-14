@@ -4,8 +4,6 @@ Contract-first analytics engineering project modelling Kobo-style WASH survey da
 
 This repo is intentionally “production-shaped”: it assumes the RAW tables already exist in Snowflake, and focuses on what an analytics engineer does next — standardise, validate, quarantine, integrate, publish marts, and monitor.
 
-If you’re a hiring manager: this is the kind of repo you can skim quickly and still understand the modelling choices, KPI contract, and how I keep the data trustworthy.
-
 ---
 
 ## Table of contents
