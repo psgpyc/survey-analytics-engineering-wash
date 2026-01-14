@@ -11,7 +11,6 @@ This repo is intentionally “production-shaped”: it assumes the RAW tables al
 - [What this repo is](#what-this-repo-is)
 - [The data domain](#the-data-domain)
 - [Repository structure](#repository-structure)
-- [Architecture overview](#architecture-overview)
 - [Modelling principles](#modelling-principles)
 - [Key contracts](#key-contracts)
 - [Published marts](#published-marts)
@@ -22,27 +21,24 @@ This repo is intentionally “production-shaped”: it assumes the RAW tables al
 - [What I’d do next](#what-id-do-next)
 - [Licence](#licence)
 
----
 
 ## What this repo is
 
 Survey data breaks in predictable ways:
-- repeated submissions over time
-- inconsistent categoricals (`tapstand` vs `public_tap_standpipe`)
-- missing keys and orphan foreign keys
-- “unknown” answers that are meaningful (especially for health outcomes)
+- there are repeated submissions over time
+- teams often use inconsistent categoricals 
+- survey submission often have missing keys and orphan foreign keys
 - soft-deleted records that should not flow downstream
 
 This project shows how I deal with that as an analytics engineer:
 
-1) define the rules explicitly (contracts + canonical sets + KPI definition)  
-2) enforce them in staging (typed, canonicalised, deduped, tested)  
+1) define the rules explicitly with contracts, canonical sets & KPI definition)  
+2) enforce them in staging (typed, canonicalised, deduped & tested)  
 3) quarantine bad records while keeping them inspectable (`__rejected`)  
 4) build intermediate integration models with stable grains  
 5) publish marts that BI tools can use without rebuilding KPI logic  
 6) create monitoring tables so debugging is fast and repeatable  
 
----
 
 ## The data domain
 
@@ -89,11 +85,11 @@ dataosphere/
 
 ## Modelling principles
 
-### 1) Contract-first
+### 1) Contract first approach
 - Canonical sets define what values are allowed downstream.
-- KPI rules are written once (contract + macros) and enforced via dbt tests.
+- KPI rules are written once (contract) and enforced via dbt tests.
 
-### 2) Join-safe grains
+### 2) Pre-defined join safe grains
 Every model declares a grain and enforces it (unique tests / composite uniqueness).
 - if a model is meant to be 1 row per key, it must prove it
 
@@ -108,9 +104,6 @@ Every model declares a grain and enforces it (unique tests / composite uniquenes
 - `__rejected` models retain bad rows for inspection and replay
 
 ### 5) Monitoring is part of the system
-If a stakeholder asks “why did the KPI drop yesterday?”, I want monitoring tables that answer it without reading compiled SQL.
-
-
 
 ## Key contracts
 
@@ -143,17 +136,17 @@ Reason:
 - it is deterministic and always present for warehouse-side reporting in this setup
 
 
-## KPI: Safe drinking water (household-event)
+## KPI: Safe drinking water 
 
 ### KPI grain
 - `household_id × submission_id`
 
-### Input rules (safe lists)
+### Input rules: safe lists
 Safe lists are version-controlled in macros:
 - SAFE_PRIMARY_WATER_SOURCES
 - SAFE_WATER_FILTER_TYPES
 
-### Strict diarrhoea rule (tri-state)
+### Strict diarrhoea rule: tri-state
 At `household_id × submission_id`, compute:
 - `member_count`
 - `total_diarrhoea_yes_14d`
@@ -217,7 +210,7 @@ Usage note:
 - it does not represent historical attribute values at the time of each event unless you do a point-in-time join via the snapshot table
 
 
-## Snapshots (SCD2 household history)
+## Snapshots with SCD2 household history
 
 This repo includes a dbt snapshot to track household attribute changes over time.
 
