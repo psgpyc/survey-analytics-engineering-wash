@@ -4,7 +4,7 @@
 [![dbt docs](https://img.shields.io/badge/dbt%20docs-live-brightgreen)](https://psgpyc.github.io/survey-analytics-engineering-wash/)
 
 
-> Live dbt Docs: https://psgpyc.github.io/survey-analytics-engineering-wash/
+> Live dbt Docs: https://psgpyc.github.io/WASH-Analytics-Engineering-Project/
 
 # WASH: Analytics Engineering Project, Modelling Kobo-style survey data in Snowflake using dbt.
 
@@ -137,7 +137,7 @@ dataosphere/
 
 This repo keeps implementation and contracts close to the code:
 
-- **Live dbt Docs (lineage + model docs):** https://psgpyc.github.io/survey-analytics-engineering-wash/
+- **Live dbt Docs (lineage + model docs):** https://psgpyc.github.io/WASH-Analytics-Engineering-Project/
 - **Data contracts:**
   - [`dataosphere/docs/data-contract.md`](dataosphere/docs/data-contract.md)
   - [`dataosphere/docs/monitoring-contract.md`](dataosphere/docs/monitoring-contract.md)
