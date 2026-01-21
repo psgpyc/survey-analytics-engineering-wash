@@ -16,7 +16,7 @@ It assumes the RAW tables already exist in Snowflake, and focuses on what an ana
 
 A programme team running a Kobo-based WASH survey already had RAW tables landing in Snowflake, but they needed reporting that was consistent and explainable day to day. 
 
-> The ask was straightforward: take what is arriving in RAW and turn it into something they can safely use for routine monitoring and decision-making.
+The ask was straightforward: take what is arriving in RAW and turn it into something they can safely use for routine monitoring and decision-making.
 
 They wanted one primary KPI they could trust and trend:
 
@@ -27,6 +27,9 @@ Additionally, they also wanted to answer practical questions when the numbers mo
 - What changed since the last survey round, and which ward(sectors) are driving it?
 
 - What kinds of issues are showing up most often in the field data collection (missing keys, invalid categoricals, orphan relationships, out-of-range values, unknown)?
+
+For context, WASH programmes span a broad set of interventions across water, sanitation, and hygiene (see UNHCR’s overview: https://www.unhcr.org/sens/introduction/module-5-wash/).  
+In this project, I focus only on the drinking water slice of that domain — specifically safe water sources and household-level treatment/filters — because that is what the KPI is designed to measure.
 
 
 ## Workflow
@@ -91,6 +94,9 @@ The result is a KPI that is repeatable, auditable, and explainable: the definiti
 
 The RAW tables represent a Kobo-style form structure:
 
+<img width="1313" height="641" alt="image" src="https://github.com/user-attachments/assets/7fe9e779-52ac-4f1c-b3e0-fd6988059e9a" />
+
+
 - `kobo_submission`  
   - grain: 1 row per `submission_id`
   - includes submission status, ward_id, location fields, timestamps, lineage
@@ -107,7 +113,6 @@ The RAW tables represent a Kobo-style form structure:
   - observations of water points
   - grain is composite: `(water_point_id, submission_id)` (depending on form design)
 
-<img width="1313" height="641" alt="image" src="https://github.com/user-attachments/assets/7fe9e779-52ac-4f1c-b3e0-fd6988059e9a" />
 
 ---
 
