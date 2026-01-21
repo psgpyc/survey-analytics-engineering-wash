@@ -20,7 +20,6 @@ A programme team running a Kobo-based WASH survey already had RAW tables landing
 
 They wanted one primary KPI they could trust and trend:
 
-> [!IMPORTANT]
 > Primary KPI: Safe drinking water by ward and day.
 
 Additionally, they also wanted to answer practical questions when the numbers moved:
@@ -129,63 +128,17 @@ dataosphere/
     monitoring-contract.md
 ```
 
-## Key contracts
+##  Documentation and contracts
 
-### Canonical value sets (enforced downstream)
+This repo keeps implementation and contracts close to the code:
 
-- `stg_kobo_household.water_filter_type`
-  - `none`, `boil`, `candle`, `chlorine`, `sodis`, `ceramic`, `biosand`, `cloth`, `ro_uv`, `other`, `unknown`
+- **Live dbt Docs (lineage + model docs):** https://psgpyc.github.io/survey-analytics-engineering-wash/
+- **Data contracts:**
+  - [`dataosphere/docs/data-contract.md`](dataosphere/docs/data-contract.md)
+  - [`dataosphere/docs/monitoring-contract.md`](dataosphere/docs/monitoring-contract.md)
+- **Contracts enforced in code:** dbt YAML + tests + macros.
 
-- `stg_kobo_household.primary_water_source` and `stg_kobo_water_point.source_type`
-  - `piped_to_dwelling`, `piped_to_yard_plot`, `public_tap_standpipe`, `tubewell_borehole`,
-    `protected_dug_well`, `unprotected_dug_well`, `protected_spring`, `unprotected_spring`,
-    `rainwater`, `tanker_truck_cart`, `bottled_water`, `surface_water`, `other`, `unknown`
-
-- `stg_kobo_member.member_sex`
-  - `m`, `f`, `male`, `female`, `other`, `unknown`
-
-- `stg_kobo_member.member_had_diarrhoea_14d` (tri-state)
-  - `yes`, `no`, `unknown`
-  - unknown is **not** treated as no (strict rule)
-
-### Time basis
-
-For this project’s reporting and monitoring:
-- event timestamp: `record_loaded_at`
-- event date: `event_date = DATE(record_loaded_at)`
-- default reporting grain: `ward_id × event_date`
-- timezone: treat as UTC (or convert before deriving date)
-
-
-## KPI: Safe drinking water (household-event)
-
-### KPI grain
-- `household_id × submission_id`
-
-### Input rules (safe lists)
-Safe lists are version-controlled in macros:
-- SAFE_PRIMARY_WATER_SOURCES
-- SAFE_WATER_FILTER_TYPES
-
-### Strict diarrhoea rule (tri-state)
-At `household_id × submission_id`, compute:
-- `member_count`
-- `total_diarrhoea_yes_14d`
-- `total_diarrhoea_no_14d`
-- `total_diarrhoea_unknown_14d`
-
-Consistency must hold:
-- `member_count = yes + no + unknown`
-
-Household is “no diarrhoea” only when:
-- `member_count > 0`
-- `yes = 0`
-- `unknown = 0`
-- `no = member_count`
-
-Final KPI:
-- `is_safe_drinking = safe_source AND safe_filter AND no_diarrhoea`
-
+---
 
 ## Published marts
 
@@ -203,102 +156,41 @@ Repo structure (from `models/marts/`):
 ---
 
 ### `fact_household_wash_event`
-Purpose:
-- KPI-ready household-event fact table used as the base for safe drinking water reporting.
-
-Grain:
-- `household_id × submission_id`
-
-Guaranteed slicers:
-- `ward_id`
-- `event_date`
-
-Eligibility:
-- `member_count >= 1`
-
-Contract invariant:
-- `is_safe_drinking = has_safe_primary_source AND has_safe_water_filter AND has_no_diarrhoea_14d_members`
-
----
+- **Purpose:** KPI-ready household-event fact table (base for safe drinking water).
+- **Grain:** `household_id × submission_id`
+- **Guaranteed slicers:** `ward_id`, `event_date`
+- **Eligibility:** `member_count >= 1`
+- **Invariant (tested):** `is_safe_drinking = has_safe_primary_source AND has_safe_water_filter AND has_no_diarrhoea_14d_members`
 
 ### `fact_household_wash_event_enriched_scd2`
-Purpose:
-- Event fact enriched with household attributes as-of the event date using SCD2 history (point-in-time correct).
-
-Grain:
-- `household_id`
-
----
+- **Purpose:** base fact enriched with household attributes as-of the event date (point-in-time correct).
+- **Grain:** `household_id`
 
 ### `fact_agg_safe_drinking_ward_day`
-Purpose:
-- Daily ward-level aggregate so BI tools do not have to rebuild KPI logic.
-
-Grain:
-- `ward_id × event_date`
-
-Must always be true (enforced by tests):
-- `household_events_safe <= household_events_total`
-- `pct_safe between 0 and 1`
-
----
+- **Purpose:** daily ward aggregate so BI does not rebuild KPI logic.
+- **Grain:** `ward_id × event_date`
+- **Invariants (tested):** `household_events_safe <= household_events_total`, `pct_safe BETWEEN 0 AND 1`
 
 ### `dim_household_current`
-Purpose:
-- Current household attributes (latest known values), built as a “current view” of event-scoped household captures.
-
-Grain:
-- `household_id`
-
----
+- **Purpose:** latest-known household attributes (current-state view).
+- **Grain:** `household_id`
+- **Note:** use for current state analysis, not historical point-in-time.
 
 ### `dim_household_history`
-Purpose:
-- Household attribute history as an SCD2 dimension (tracks how household attributes change over time).
-
-Grain:
-- `household_id × valid_from` (SCD2-style history)
-
-Usage note:
-- Enables point-in-time joins (either directly, or via `fact_household_wash_event_enriched_scd2`).
-- Useful for “what changed over time” analysis and cohort-style comparisons.
-
-## Snapshots (SCD2 household history)
-
-This repo includes a dbt snapshot to track household attribute changes over time.
-
-### What it’s for
-- keep history of attribute changes (filter type, source type, toilet status, reported size, and location fields)
-- enable point-in-time analysis when needed
+- **Purpose:** household attribute history as SCD2 (tracks changes over time).
+- **Grain:** SCD2 history by `household_id` with validity windows.
+- **Note:** enables point-in-time joins (also available via the enriched fact).
 
 ---
 
 ## Monitoring and triage
 
-Monitoring models are intentionally small, simple, and sliceable.
+Monitoring models are intentionally small and sliceable for day-to-day operations:
+- Freshness and volume drift checks
+- Rejection rates and rejection reasons (bucketed)
+- KPI-critical “unknown” rates to explain movement
 
-### What exists
-
-- `mon_total_by_model_day`
-  - daily base row counts
-  - grain: `base_model_name × event_date`
-
-- `mon_rejections_by_model_day`
-  - daily rejected row counts
-  - grain: `base_model_name × event_date`
-
-- `mon_rejection_rate_day`
-  - rejection rate derived from totals + rejections
-  - grain: `base_model_name × event_date`
-
-- `mon_rejection_by_reason_day`
-  - “why” slicer for rejected rows
-  - grain: `base_model_name × event_date × reason_bucket`
-  - standard buckets: `missing_keys`, `orphan_fk`, `invalid_required_field`, `invalid_canonical`, `invalid_range`, `unknown_other`, `soft_deleted`, `other`
-
-- `mon_unknown_diarrhoea_rate_ward_day`
-  - tracks diarrhoea completeness issues by ward/day
-  - grain: `ward_id × event_date`
+Full monitoring definitions live in [`dataosphere/docs/monitoring-contract.md`](dataosphere/docs/monitoring-contract.md).
 
 ---
 
