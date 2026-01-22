@@ -14,3 +14,11 @@
                         )
    
 {% endmacro %}
+
+
+
+{% macro wash_event_lookback_filter(lookback_col='event_date',
+                                    lookback_var='wash_event_lookback_days') %}
+    {{ lookback_col }} >= dateadd(day, -{{var(lookback_var, 30)}}, current_date())
+
+{% endmacro %}

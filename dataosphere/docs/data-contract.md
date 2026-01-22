@@ -450,7 +450,7 @@ This repo supports both current-state consumption and historical point-in-time a
 
 ---
 
-### 7.3 Snapshot table: `snap_dim_household_current`
+### 7.3 Snapshot table: `snap_dim_household`
 
 **Purpose**
 - System-of-record for SCD2 history of household attributes.
