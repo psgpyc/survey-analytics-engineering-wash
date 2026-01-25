@@ -26,7 +26,6 @@ vars:
   wash_event_lookback_days: 30
   wash_load_lookback_days: 7
 
-
 snapshots:
   dataosphere:
     +schema: snapshots
