@@ -1,3 +1,21 @@
+# KMS KEY
+
+variable "alias_name" {
+  description = "KMS alias name (without 'alias/'). Example: wash-raw"
+  type        = string
+
+}
+
+
+variable "description" {
+  description = "Optional key description."
+  type        = string
+  default     = null
+}
+
+
+# S3
+
 variable "aws_region" {
   type    = string
   default = "eu-west-2"
@@ -7,6 +25,9 @@ variable "aws_profile" {
   type    = string
   default = null
 }
+
+# S3 BUCKET
+
 
 variable "bucket_name" {
 
@@ -92,3 +113,14 @@ variable "noncurrent_v_lifecycle_rules" {
   )
   
 }
+
+variable "sse_algorithm" {
+  type = string
+  description = "value"
+  nullable = false
+
+}
+
+
+
+

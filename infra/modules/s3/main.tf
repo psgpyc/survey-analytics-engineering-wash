@@ -206,6 +206,45 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+    
+    bucket = aws_s3_bucket.this.id
+
+    rule {
+
+        dynamic "apply_server_side_encryption_by_default" {
+            
+            for_each = var.sse_algorithm == "AES256" && var.kms_master_key_id == null ? [1] : []
+
+            content {
+
+                sse_algorithm = var.sse_algorithm
+            }
+          
+        }
+
+        dynamic "apply_server_side_encryption_by_default" {
+
+            # sanity check, var enforced validation does not allow kms_master_key_id to be null if sse_algorithm is aws:kms or aws:kms:dsse
+            for_each = (
+                contains(["aws:kms", "aws:kms:dsse"], var.sse_algorithm) 
+                && (var.kms_master_key_id != null 
+                && length(trimspace( var.kms_master_key_id)) > 0)
+            ) ? [1] : []
+
+            content {
+
+                sse_algorithm = var.sse_algorithm
+                kms_master_key_id = var.kms_master_key_id
+            }
+          
+        }
+    }
+
+    depends_on = [ aws_s3_bucket.this, aws_s3_bucket_versioning.this, aws_s3_bucket_ownership_controls.this, aws_s3_bucket_public_access_block.this, aws_s3_bucket_lifecycle_configuration.this ]
+  
+}
+
 
 
 

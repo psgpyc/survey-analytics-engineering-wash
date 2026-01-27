@@ -171,3 +171,38 @@ variable "noncurrent_v_lifecycle_rules" {
 
   }
 }
+
+variable "sse_algorithm" {
+  type = string
+  description = "value"
+  nullable = false
+
+  validation {
+    condition = contains(["AES256", "aws:kms", "aws:kms:dsse"], var.sse_algorithm)
+    error_message = "Server-side encryption algorithm to use. Valid values are AES256, aws:kms, and aws:kms:dsse"
+  }
+  
+}
+
+variable "kms_master_key_id" {
+
+  type = string
+  description = "value"
+  nullable = true
+
+  validation {
+
+    condition = (
+      (var.sse_algorithm == "AES256" && var.kms_master_key_id == null)
+      ||
+      ( 
+        contains(["aws:kms", "aws:kms:dsse"], var.sse_algorithm) 
+        && var.kms_master_key_id != null 
+        && length(trimspace(var.kms_master_key_id)) > 0
+      
+      )
+    )
+    
+    error_message = "kms_master_key_id must be null when sse_algorithm is AES256, and must be a non-empty string when sse_algorithm is aws:kms or aws:kms:dsse."
+  }
+}
