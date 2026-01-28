@@ -1,5 +1,6 @@
 # This module enforces PRIVATE S3 buckets only.
-# If a public bucket is needed, a separate dedicated module must be created.
+# If a public bucket is needed, a separate dedicated module needs to be created.
+
 resource "aws_s3_bucket" "this" {
 
     bucket = var.bucket_name

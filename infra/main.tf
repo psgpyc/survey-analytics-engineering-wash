@@ -74,3 +74,82 @@ module "sns" {
 
   
 }
+
+module "sqs_dlq" {
+
+    source = "./modules/sqs"
+
+    sqs_name = var.sqs_dlq_name
+
+    sqs_tags = var.sqs_dlq_tags
+
+    sqs_policy = null
+
+    redrive_policy = null
+
+    redrive_allow_policy = templatefile("./policies/wash-sqs-redrive-allow-policy.json.tpl", {
+        source_sqs_queue_arn = module.sqs_main.queue_arn
+
+    })
+
+}
+
+module "sqs_main" {
+
+    source = "./modules/sqs"
+
+    sqs_name = var.sqs_main_name
+
+    sqs_tags = var.sqs_main_tags
+
+    sqs_policy = templatefile("./policies/wash-sqs-resource-policy.json.tpl", {
+        region = data.aws_region.current.id
+        account_id = data.aws_caller_identity.current.account_id
+        queue_name = var.sqs_main_name
+        sns_topic_name = module.sns.topic_name
+
+    })
+
+    redrive_policy = templatefile("./policies/wash-sqs-redrive-policy.json.tpl", {
+        dlq_arn = module.sqs_dlq.queue_arn
+        max_receive_count = 4
+    })
+
+    redrive_allow_policy = null
+  
+}
+
+resource "aws_sns_topic_subscription" "this" {
+
+    topic_arn = module.sns.topic_arn
+
+    protocol = "sqs"
+
+    endpoint = module.sqs_main.queue_arn
+
+    raw_message_delivery = true
+
+    depends_on = [ module.sns, module.sqs_main ]
+  
+}
+
+
+resource "aws_s3_bucket_notification" "this" {
+    
+    bucket = module.s3.bucket_id
+
+    topic {
+        topic_arn = module.sns.topic_arn
+
+        events = ["s3:ObjectCreated:*"]
+        filter_prefix = "raw/"
+        filter_suffix = ".json"
+    }
+
+    depends_on = [ 
+        module.s3,
+        module.sns,
+        aws_sns_topic_subscription.this
+     ]
+  
+}

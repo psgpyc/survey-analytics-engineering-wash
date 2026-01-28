@@ -147,3 +147,33 @@ variable "sns_tags" {
 }
 
 
+# sqs
+
+variable "sqs_dlq_name" {
+    type = string
+    description = "DQL SQS queue name. 1–80 characters. Allowed: alphanumeric, hyphen (-), underscore (_)."
+    nullable = false
+}
+
+variable "sqs_dlq_tags" {
+
+    type = map(string)
+    description = "value"
+    nullable = true
+  
+}
+
+
+variable "sqs_main_name" {
+    type = string
+    description = "Main SQS queue name. 1–80 characters. Allowed: alphanumeric, hyphen (-), underscore (_)."
+    nullable = false
+}
+
+variable "sqs_main_tags" {
+
+    type = map(string)
+    description = "value"
+    nullable = true
+  
+}
