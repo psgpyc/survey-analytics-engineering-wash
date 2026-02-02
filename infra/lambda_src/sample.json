@@ -1,0 +1,80 @@
+{
+  "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+  "status": "submitted",
+  "submitted_at": "2026-02-02T10:14:22Z",
+  "collected_at": "2026-02-02T09:42:11Z",
+  "enumerator_id": "enum-1037",
+  "device_id": "android-48219",
+  "ward_id": "04",
+  "municipality": "Dhulikhel",
+  "district": "Kavrepalanchok",
+  "gps_lat": 27.621884,
+  "gps_lon": 85.542117,
+  "consent": true,
+
+  "_loaded_at": "2026-02-02T10:14:25Z",
+  "_batch_id": "bch-2f91c6a8c3",
+  "_source_file": "raw/2026/02/02/wash_submission_101425_bch-2f91c6a8c3.json",
+  "_is_deleted": false,
+
+  "household": {
+    "household_id": "c6c7c4b3-1f43-49c8-9a6c-3e51b79df7e5",
+    "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+    "ward_id": "04",
+    "household_head_name": "Sita Ghimire",
+    "phone_last4": "12A4",
+    "hh_size_reported": 6,
+    "water_filter_type": "candle",
+    "primary_water_source": "spring",
+    "has_toilet": true,
+    "members": [
+      {
+        "household_id": "c6c7c4b3-1f43-49c8-9a6c-3e51b79df7e5",
+        "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+        "member_index": 1,
+        "member_name": "Sita Ghimire",
+        "sex": "female",
+        "age_years": 33,
+        "had_diarrhoea_14d": false
+      },
+      {
+        "household_id": "c6c7c4b3-1f43-49c8-9a6c-3e51b79df7e5",
+        "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+        "member_index": 2,
+        "member_name": "Ramesh Ghimire",
+        "sex": "male",
+        "age_years": 38,
+        "had_diarrhoea_14d": false
+      },
+      {
+        "household_id": "c6c7c4b3-1f43-49c8-9a6c-3e51b79df7e5",
+        "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+        "member_index": 3,
+        "member_name": "Maya Ghimire",
+        "sex": "female",
+        "age_years": 7,
+        "had_diarrhoea_14d": true
+      },
+      {
+        "household_id": "c6c7c4b3-1f43-49c8-9a6c-3e51b79df7e5",
+        "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+        "member_index": 4,
+        "member_name": "Hari Ghimire",
+        "sex": "male",
+        "age_years": 4,
+        "had_diarrhoea_14d": false
+      }
+    ]
+  },
+
+  "water_point": {
+    "water_point_id": "2f6d1e0b-4e14-4a9e-bc70-9f9f16d4b0f8",
+    "submission_id": "7f4a1f2b-4b3b-4f7a-b6c3-8b2d6fb94c55",
+    "ward_id": "04",
+    "source_type": "tapstand",
+    "functional": true,
+    "distance_minutes": 12,
+    "gps_lat": 27.622401,
+    "gps_lon": 85.541882
+  }
+}

@@ -10,7 +10,7 @@
                 "s3:ListMultipartUploadParts"
             ],
             "Resource": [
-                "arn:aws:s3:::${bucket_name}/${bucket_prefix}"
+                "arn:aws:s3:::${bucket_name}/${bucket_prefix}/*"
             ]
         },
         {
@@ -21,7 +21,7 @@
                 "s3:GetBucketLocation"
             ],
             "Resource":[
-                 "arn:aws:s3:::${bucket_name}/${bucket_prefix}"
+                 "arn:aws:s3:::${bucket_name}"
             ]
         },
         {

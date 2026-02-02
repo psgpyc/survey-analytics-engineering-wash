@@ -70,8 +70,6 @@ module "sns" {
     })
 
     sns_tags = var.sns_tags
-
-
   
 }
 
@@ -151,5 +149,100 @@ resource "aws_s3_bucket_notification" "this" {
         module.sns,
         aws_sns_topic_subscription.this
      ]
+  
+}
+
+module "wash_iam" {
+
+    source = "./modules/iam"
+
+    iam_role_name = var.iam_role_name
+
+    iam_role_assume_role_policy = templatefile("./policies/wash-ingest-assume-role.json.tpl", {
+
+        account_id = data.aws_caller_identity.current.account_id
+        region = data.aws_region.current.id
+        function_name = var.function_name
+    })
+
+    iam_role_policy = templatefile("./policies/wash-ingest-iam-role-policy.json.tpl", {
+
+        bucket_name = module.s3.bucket_name
+        bucket_prefix = "raw"
+        kms_key_arn = module.kms.key_arn
+    })
+  
+}
+
+
+
+module "wash_lambda" {
+
+    source = "./modules/lambda"
+
+    raw_bucket_name = module.s3.bucket_name
+
+    raw_prefix = var.raw_prefix
+
+    kms_key_arn = module.kms.key_arn
+
+    function_name = var.function_name
+
+    handler = var.handler
+
+    runtime = var.runtime
+
+    lambda_iam_role = module.wash_iam.role_arn
+
+    source_dir = "${path.root}/lambda_src"
+
+    environment = {
+        N_HOUSEHOLDS = "10"
+        BAD_ROW_RATE = "0.12"
+        LOG_LEVEL    = "INFO"
+        RAW_BUCKET = module.s3.bucket_name
+    }
+
+    tags = {
+        Project     = "wash"
+        ManagedBy   = "terraform"
+        Environment = "dev"
+        Domain      = "raw"
+    }
+
+    depends_on = [ module.s3, module.kms, module.wash_iam ]
+}
+
+
+module "scheduler_iam" {
+
+    source = "./modules/iam"
+
+    iam_role_name = var.scheduler_iam_role_name
+
+    iam_role_assume_role_policy = templatefile("./policies/wash-scheduler-assume-role.json.tpl", {
+
+        account_id = data.aws_caller_identity.current.account_id
+    })
+
+    iam_role_policy = templatefile("./policies/wash-scheduler-iam-role-policy.json.tpl", {
+
+        lambda_func_arn = module.wash_lambda.function_arn
+    })
+  
+}
+
+
+module "scheduler" {
+
+    source = "./modules/eventbridge"
+
+    name_prefix = var.name_prefix
+
+    schedule_expression = var.schedule_expression
+
+    lambda_function_arn = module.wash_lambda.function_arn
+
+    scheduler_iam_role_arn = module.scheduler_iam.role_arn
   
 }

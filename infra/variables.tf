@@ -14,7 +14,7 @@ variable "description" {
 }
 
 
-# S3
+# aws default
 
 variable "aws_region" {
   type    = string
@@ -176,4 +176,70 @@ variable "sqs_main_tags" {
     description = "value"
     nullable = true
   
+}
+
+# iam
+variable "iam_role_name" {
+  type        = string
+  description = "IAM role name."
+  nullable    = false
+  
+}
+variable "scheduler_iam_role_name" {
+  type        = string
+  description = "Scheduler IAM role name."
+  nullable    = false
+  
+}
+
+
+# lambda
+
+variable "function_name" {
+  type        = string
+  description = "Lambda function name."
+  nullable    = false
+
+}
+
+
+variable "runtime" {
+  type        = string
+  description = "Lambda runtime (e.g., python3.12)."
+  nullable    = false
+
+}
+
+variable "handler" {
+  type        = string
+  description = "Lambda handler (e.g., app.lambda_handler)."
+  nullable    = false
+}
+
+variable "environment" {
+  type        = map(string)
+  description = "Environment variables for the Lambda."
+  default     = {}
+  nullable    = false
+}
+
+
+variable "raw_prefix" {
+  type        = string
+  description = "Prefix for raw writes (e.g., raw/)."
+  default     = "raw/"
+  nullable    = false
+
+}
+
+# eventbridge scheduler
+
+variable "name_prefix" {
+  type        = string
+  description = "Prefix used for naming scheduler resources (e.g. 'wash-dev')."
+}
+
+variable "schedule_expression" {
+  type        = string
+  description = "EventBridge Scheduler expression: rate() or cron()."
 }

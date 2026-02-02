@@ -242,7 +242,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
         }
     }
 
-    depends_on = [ aws_s3_bucket.this, aws_s3_bucket_versioning.this, aws_s3_bucket_ownership_controls.this, aws_s3_bucket_public_access_block.this, aws_s3_bucket_lifecycle_configuration.this ]
+    depends_on = [ 
+        aws_s3_bucket.this, 
+        aws_s3_bucket_versioning.this, 
+        aws_s3_bucket_ownership_controls.this, 
+        aws_s3_bucket_public_access_block.this, 
+        aws_s3_bucket_lifecycle_configuration.this 
+    ]
   
 }
 

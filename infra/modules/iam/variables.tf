@@ -40,16 +40,23 @@ variable "iam_role_policy" {
 variable "iam_role_tags" {
   type        = map(string)
   description = "Tags applied to role and policy."
-  default     = {
-    domain      = "raw"
-    environment = "dev"
-  }
+  nullable = true
+  default     = {}
+}
+
+variable "iam_role_policy_tags" {
+
+  type        = map(string)
+  description = "Tags applied to role and policy."
+  nullable = true
+  default = {}
+  
 }
 
 variable "iam_role_path" {
   type        = string
   description = "IAM role path."
-  default     = "/wash/iam/role"
+  default     = "/wash/iam/role/"
 }
 
 variable "iam_role_max_session_duration" {
@@ -94,5 +101,5 @@ variable "iam_policy_description" {
 variable "iam_policy_path" {
   type        = string
   description = "IAM policy path."
-  default     = "/wash/iam/role/policy"
+  default     = "/wash/iam/role/policy/"
 }

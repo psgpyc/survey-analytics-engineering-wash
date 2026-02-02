@@ -18,7 +18,9 @@ resource "aws_iam_policy" "this" {
   policy      = var.iam_role_policy
   path        = var.iam_policy_path
 
-  tags = var.iam_role_tags
+  tags = var.iam_role_policy_tags
+
+  depends_on = [ aws_iam_role.this ]
 
 }
 
@@ -26,5 +28,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 
   role       = aws_iam_role.this.name
   policy_arn = aws_iam_policy.this.arn
+
+  depends_on = [ aws_iam_role.this, aws_iam_policy.this ]
   
 }
