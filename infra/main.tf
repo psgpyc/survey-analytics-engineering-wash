@@ -21,6 +21,9 @@ module "kms" {
     kms_key_policy = templatefile("./policies/wash-kms-key-policy.json.tpl", {
 
         account_id = data.aws_caller_identity.current.account_id
+        path = var.iam_role_path
+        role_name = var.snowflake_iam_role_name
+
     })
 }
 
@@ -252,7 +255,7 @@ module "snowflake_iam" {
 
     source = "./modules/iam"
 
-    iam_role_name = "SnowflakeReader"
+    iam_role_name = var.snowflake_iam_role_name
 
     iam_role_assume_role_policy = templatefile("./policies/snowflake/snowflake-wash-assume-role.json.tpl", {
 
@@ -264,6 +267,8 @@ module "snowflake_iam" {
 
         bucket_arn = module.s3.bucket_arn
         prefix = "raw"
+        bucket_name = module.s3.bucket_name
+        kms_key_arn = module.kms.key_arn
     })
  
 }

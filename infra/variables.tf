@@ -192,6 +192,12 @@ variable "scheduler_iam_role_name" {
   
 }
 
+variable "iam_role_path" {
+  type        = string
+  description = "IAM role path."
+  default     = "/wash/iam/role/"
+}
+
 
 # lambda
 
@@ -247,6 +253,21 @@ variable "schedule_expression" {
 
 # snowflake iam and external ids
 
+variable "snowflake_iam_role_name" {
+  type = string
+  description = "The AWS IAM Role Name for Snowflake"
+  nullable = false
+
+  validation {
+    condition = (
+      var.snowflake_iam_role_name != null && length(trimspace(var.snowflake_iam_role_name)) > 0
+    )
+    error_message = "Snowflake IAM Role Name cannot be empty"
+  }
+  
+  
+}
+
 variable "snowflake_iam_arn" {
 
   type = string
@@ -276,4 +297,19 @@ variable "snowflake_iam_external_id" {
   }
 
   
+}
+
+variable "snowflake_sqs_arn" {
+
+  type = string
+  description = "SNowflake owned SQS arn"
+  nullable = false
+
+  validation {
+    condition = (
+      var.snowflake_sqs_arn != null && length(trimspace(var.snowflake_sqs_arn)) > 0
+    )
+    error_message = "Snowflake Owned Arn cannot be null, blank or empty string"
+  }
+
 }

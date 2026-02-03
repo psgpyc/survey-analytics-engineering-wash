@@ -11,6 +11,19 @@
         "StringEquals": { "AWS:SourceAccount": "${account_id}" },
         "ArnLike": { "AWS:SourceArn": "arn:aws:s3:::${bucket_name}" }
       }
+    },
+    {
+      "Sid":"AllowSnowflakeSQSSubscribe",
+      "Effect":"Allow",
+      "Principal":{
+          "AWS":"arn:aws:iam::727529935573:user/xsmc1000-s"
+      },
+      "Action":[
+        "sns:Subscribe"
+      ],
+      "Resource":[
+        "arn:aws:sns:eu-west-2:373901294251:wash-raw-object-created"
+      ]
     }
   ]
 }
