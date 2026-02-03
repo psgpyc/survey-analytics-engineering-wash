@@ -1,20 +1,18 @@
 {
     "Version": "2012-10-17",
     "Statement": [{
-
-        "Sid": "",
+        "Sid": "SnowflakeReaderAssumeRole",
 
         "Effect": "Allow",
 
         "Action": "sts:AssumeRole",
 
         "Principal": {
-            "Service": "scheduler.amazonaws.com"
+            "AWS": "${snowflake_iam_arn}"
         },
-
         "Condition": {
             "StringEquals": {
-                "aws:SourceAccount": "${account_id}"
+                "sts:ExternalId": "${snowflake_iam_external_id}"
             }
         }
     }]

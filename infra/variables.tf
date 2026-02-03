@@ -243,3 +243,37 @@ variable "schedule_expression" {
   type        = string
   description = "EventBridge Scheduler expression: rate() or cron()."
 }
+
+
+# snowflake iam and external ids
+
+variable "snowflake_iam_arn" {
+
+  type = string
+  description = "The AWS IAM user created through Storage Integration in Snowflake."
+  nullable = false
+
+  validation {
+    condition = (
+      var.snowflake_iam_arn != null && length(trimspace(var.snowflake_iam_arn)) > 0
+    )
+    error_message = "IAM Arn cannot be null, blank or empty string"
+  }
+  
+}
+
+variable "snowflake_iam_external_id" {
+
+  type = string
+  description = "The AWS IAM user externalID created through Storage Integration in Snowflake."
+  nullable = false
+
+  validation {
+    condition = (
+      var.snowflake_iam_external_id != null && length(trimspace(var.snowflake_iam_external_id)) > 0
+    )
+    error_message = "IAM Arn cannot be null, blank or empty string"
+  }
+
+  
+}

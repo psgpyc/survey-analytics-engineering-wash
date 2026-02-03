@@ -246,3 +246,24 @@ module "scheduler" {
     scheduler_iam_role_arn = module.scheduler_iam.role_arn
   
 }
+
+
+module "snowflake_iam" {
+
+    source = "./modules/iam"
+
+    iam_role_name = "SnowflakeReader"
+
+    iam_role_assume_role_policy = templatefile("./policies/snowflake/snowflake-wash-assume-role.json.tpl", {
+
+        snowflake_iam_arn = var.snowflake_iam_arn
+        snowflake_iam_external_id = var.snowflake_iam_external_id
+    })
+
+    iam_role_policy = templatefile("./policies/snowflake/snowflake-wash-assume-role-iam-policy.json.tpl", {
+
+        bucket_arn = module.s3.bucket_arn
+        prefix = "raw"
+    })
+ 
+}
