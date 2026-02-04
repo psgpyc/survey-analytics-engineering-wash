@@ -28,7 +28,6 @@ jobs:
     env:
       SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
       SF_USER: ${{ secrets.SF_USER }}
-      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
       SF_ROLE: ${{ secrets.SF_ROLE }}
       SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
       SF_DATABASE: ${{ secrets.SF_DATABASE }}
@@ -57,6 +56,14 @@ jobs:
 
       - name: dbt deps
         run: dbt deps --profiles-dir ${{ env.DBT_PROFILES_DIR }}
+
+      - name: Write Snowflake Private Key
+        run: |
+          KEY_PATH="${{ runner.temp }}/snowflake_key.p8"
+          echo "SF_P8_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+          printf '%s' "${{ secrets.SF_P8_KEY }}" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
 
       - name: dbt debug
         run: dbt debug --target ${{ env.DBT_TARGET }} --profiles-dir ${{ env.DBT_PROFILES_DIR }}
