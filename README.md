@@ -10,7 +10,11 @@
 
 This repo is intentionally “production-shaped”. 
 
-It assumes the RAW tables already exist in Snowflake, and focuses on what an analytics engineer does next — standardise, validate, quarantine, integrate, publish marts, and monitor.
+Raw Kobo-style JSON lands in a private, SSE-KMS encrypted S3 bucket, events flow via SNS to SQS (with DLQ), and Snowpipe auto-ingests into Snowflake RAW tables. 
+
+From there, dbt standardises and validates the data, quarantines bad rows, builds integrated intermediate models, publishes dimensional marts for BI, and ships monitoring models for freshness and data quality.
+
+![WASH ARCHITECTURE DIAGRAM](./assets/wash-architecture-diag.svg)
 
 ## Problem Statement
 
