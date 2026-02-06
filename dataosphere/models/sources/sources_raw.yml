@@ -89,4 +89,40 @@ sources:
             description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
             data_tests: [not_null]
 
+      - name: landing
+        identifier: LANDING
+        description: >
+          Immutable landing table for raw WASH survey ingest.
+          One row per ingested record/file event. Stores the original JSON in VARIANT and
+          ingestion metadata for lineage, replay, and audit.
 
+        config:
+          enabled: true
+          tags: ["raw", "load", "wash"]
+          loaded_at_field: ingested_at
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 125, period: hour}
+
+        columns:
+          - name: payload
+            description: >
+              Original survey record as semi-structured JSON.
+              This is the system-of-record copy used for all downstream parsing and modelling.
+            data_tests:
+              - not_null
+
+          - name: file_name
+            description: >
+              Source object path for lineage and replay.
+              Typically the S3 key (or staged file path) including date partition and batch id,
+              e.g. raw/2026/02/04/wash_submissions_080030_<batch_id>.json
+            data_tests:
+              - not_null
+
+          - name: ingested_at
+            description: >
+              Timestamp when the record was ingested into Snowflake (load time).
+              Used for freshness, monitoring, and incremental backfills.
+            data_tests:
+              - not_null 
