@@ -34,7 +34,7 @@ with source as (
         ) as fla
 
     {% if is_incremental() %}
-        where {{ raw_incremental_load_filter() }}
+        where {{ raw_incremental_load_filter(load_col="ext._loaded_at") }}
     {% endif %}
 )
 select 

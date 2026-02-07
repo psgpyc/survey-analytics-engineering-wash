@@ -14,7 +14,7 @@ with source as (
         _source_file,
         _is_deleted
     from
-        {{source('raw', 'kobo_member')}}
+        {{ ref('raw_kobo_member') }}
 ), standardised as (
     select
 

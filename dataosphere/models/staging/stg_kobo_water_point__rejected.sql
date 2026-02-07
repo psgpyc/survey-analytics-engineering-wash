@@ -15,6 +15,7 @@ with source as (
         source_file,
         dq_missing_blank_water_point_id,
         dq_missing_blank_submission_id,
+        dq_invalid_source_type,
         dq_missing_ward_id,
         dq_missing_blank_source_type,
         dq_negative_distance_minutes,
@@ -33,6 +34,8 @@ where
     dq_missing_blank_submission_id = true
     or
     dq_missing_ward_id = true
+    or
+    dq_invalid_source_type = true
     or
     dq_missing_blank_source_type = true
     or

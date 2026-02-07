@@ -9,7 +9,6 @@
 with source as (
     
     select  
-
         household_id::string as household_id,
         submission_id::string as submission_id,
         household_ward_id::number as ward_id,

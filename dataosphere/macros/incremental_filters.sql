@@ -27,10 +27,11 @@
 -- raw filters
 
 {% macro raw_incremental_load_filter(load_col="_loaded_at",
+                                      subquery_loaded_col="_loaded_at",
                                       base_ts="to_timestamp_ntz('2025-01-01')") %}
     {{load_col}} > ( 
                         select 
-                            coalesce(max({{ load_col }}), {{ base_ts }})
+                            coalesce(max({{ subquery_loaded_col }}), {{ base_ts }})
                         from 
                             {{this}}
                     )

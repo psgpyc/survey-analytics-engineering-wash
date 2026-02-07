@@ -15,7 +15,7 @@ with source as (
         _source_file, 
         _is_deleted
     from    
-        {{ source('raw', 'kobo_water_point')}}
+        {{ ref('raw_kobo_waterpoint' )}}
 ), standardised as (
     select 
         -- id/ dimentions
@@ -71,8 +71,6 @@ with source as (
                     'tanker_truck_cart',
                     'bottled_water',
                     'surface_water',
-                    'spring',
-                    'tapstand',
                     'other',
                     'unknown')
         ) as dq_invalid_source_type,
