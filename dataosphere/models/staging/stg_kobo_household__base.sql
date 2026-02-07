@@ -16,7 +16,7 @@ WITH source AS (
         _source_file, 
         _is_deleted 
     FROM    
-        {{ source('raw', 'kobo_household') }}
+        {{ ref('raw_kobo_household') }}
 ), standardised AS (
     SELECT
         -- ids/ dimentions

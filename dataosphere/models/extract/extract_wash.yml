@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: ext_kobo_source_flattened
+    description: ""
+
+    config:
+      tags: ["extract", "kobo"]
+
+    columns:
+    - name: _loaded_at
+      description: "Timestamp when this row was ingested into Snowflake (pipeline load time). Used for freshness and incremental processing."
+      data_tests: [not_null]
+
+    - name: _source_file
+      description: "Source object key / filename that produced this row (lineage back to S3 and raw export artefacts)."
+      data_tests: [not_null]
+
+    - name: _is_deleted
+      description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
+      data_tests: [not_null]     

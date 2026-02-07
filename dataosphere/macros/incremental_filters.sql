@@ -1,6 +1,6 @@
 {% macro wash_incremental_load_filter(load_col='record_loaded_at',
                                      lookback_var='wash_load_lookback_days',
-                                     base_ts="to_timestamp_ntz('1900-01-01')") %}
+                                     base_ts="to_timestamp_ntz('2025-01-01')") %}
     
     {{ load_col }} >= dateadd(
                             day, 
@@ -20,5 +20,20 @@
 {% macro wash_event_lookback_filter(lookback_col='event_date',
                                     lookback_var='wash_event_lookback_days') %}
     {{ lookback_col }} >= dateadd(day, -{{var(lookback_var, 30)}}, current_date())
+
+{% endmacro %}
+
+
+-- raw filters
+
+{% macro raw_incremental_load_filter(load_col="_loaded_at",
+                                      subquery_loaded_col="_loaded_at",
+                                      base_ts="to_timestamp_ntz('2025-01-01')") %}
+    {{load_col}} > ( 
+                        select 
+                            coalesce(max({{ subquery_loaded_col }}), {{ base_ts }})
+                        from 
+                            {{this}}
+                    )
 
 {% endmacro %}

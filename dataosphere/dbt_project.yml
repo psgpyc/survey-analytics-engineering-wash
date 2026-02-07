@@ -40,6 +40,11 @@ models:
       columns: true
     +tags: ["wash", "kobo"]
 
+    extract:
+      +materailized: view
+      +schema: extract
+      +tags: ["extract"]
+
     staging:
       +materialized: view
       +schema: stage

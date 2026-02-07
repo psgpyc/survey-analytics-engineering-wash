@@ -20,73 +20,41 @@ sources:
         error_after: {count: 24, period: hour}
 
     tables:
-      - name: kobo_submission
-        identifier: KOBO_SUBMISSION
-        description: "KOBO Submissions: 1 row per submission_id"
+
+      - name: landing
+        identifier: LANDING
+        description: >
+          Immutable landing table for raw WASH survey ingest.
+          One row per ingested record/file event. Stores the original JSON in VARIANT and
+          ingestion metadata for lineage, replay, and audit.
+
+        config:
+          enabled: true
+          tags: ["raw", "load", "wash"]
+          loaded_at_field: ingested_at
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
 
         columns:
-          - name: _loaded_at
-            description: "Timestamp when this row was ingested into Snowflake (pipeline load time). Used for freshness and incremental processing."
-            data_tests: [not_null]
+          - name: payload
+            description: >
+              Original survey record as semi-structured JSON.
+              This is the system-of-record copy used for all downstream parsing and modelling.
+            data_tests:
+              - not_null
 
-          - name: _source_file
-            description: "Source object key / filename that produced this row (lineage back to S3 and raw export artefacts)."
-            data_tests: [not_null]
+          - name: file_name
+            description: >
+              Source object path for lineage and replay.
+              Typically the S3 key (or staged file path) including date partition and batch id,
+              e.g. raw/2026/02/04/wash_submissions_080030_<batch_id>.json
+            data_tests:
+              - not_null
 
-          - name: _is_deleted
-            description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
-            data_tests: [not_null]
-
-      - name: kobo_household
-        identifier: KOBO_HOUSEHOLD
-        description: "Households: 1 row per household_id (register)"
-
-        columns:
-          - name: _loaded_at
-            description: "Timestamp when this row was ingested into Snowflake (pipeline load time). Used for freshness and incremental processing."
-            data_tests: [not_null]
-
-          - name: _source_file
-            description: "Source object key / filename that produced this row (lineage back to S3 and raw export artefacts)."
-            data_tests: [not_null]
-
-          - name: _is_deleted
-            description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
-            data_tests: [not_null]
-
-
-      - name: kobo_member
-        identifier:  KOBO_MEMBER
-        description: "Repeat group. Grain: 1 row per member record"
-
-        columns:
-          - name: _loaded_at
-            description: "Timestamp when this row was ingested into Snowflake (pipeline load time). Used for freshness and incremental processing."
-            data_tests: [not_null]
-
-          - name: _source_file
-            description: "Source object key / filename that produced this row (lineage back to S3 and raw export artefacts)."
-            data_tests: [not_null]
-
-          - name: _is_deleted
-            description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
-            data_tests: [not_null]
-
-      - name: kobo_water_point
-        identifier: KOBO_WATER_POINT
-        description: "Water point checks: Grain: 1 row per water_point_id observation"
-
-        columns:
-          - name: _loaded_at
-            description: "Timestamp when this row was ingested into Snowflake (pipeline load time). Used for freshness and incremental processing."
-            data_tests: [not_null]
-
-          - name: _source_file
-            description: "Source object key / filename that produced this row (lineage back to S3 and raw export artefacts)."
-            data_tests: [not_null]
-
-          - name: _is_deleted
-            description: "Soft-delete flag indicating the upstream record was marked as deleted. Raw retains deleted rows for audit; downstream models typically filter to active records"
-            data_tests: [not_null]
-
-
+          - name: ingested_at
+            description: >
+              Timestamp when the record was ingested into Snowflake (load time).
+              Used for freshness, monitoring, and incremental backfills.
+            data_tests:
+              - not_null 

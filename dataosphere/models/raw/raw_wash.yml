@@ -1,0 +1,97 @@
+version: 2
+
+models:
+
+  - name: raw_kobo_submission
+    description: "RAW submission-level table parsed from the LANDING VARIANT payload. One row per submission (after flattening). This layer keeps source values with minimal shaping and adds audit/lineage columns for traceability, replay, and operational monitoring."
+
+    config:
+      tags: ["raw", "kobo", "wash"]
+
+    columns:
+      - name: _loaded_at
+        description: "Pipeline load timestamp in Snowflake for this record. Used for incremental processing, late-arrival lookbacks, and freshness monitoring."
+        data_tests: [not_null]
+
+      - name: _batch_id
+        description: "Ingestion batch identifier assigned by the pipeline. Useful for batch reconciliation, debugging, and replay/backfill of a specific run."
+        data_tests: [not_null]
+
+      - name: _source_file
+        description: "Source object key / filename that produced this record (lineage back to S3/raw artefacts). Used to trace, reproduce, and investigate data issues."
+        data_tests: [not_null]
+
+      - name: _is_deleted
+        description: "Soft-delete indicator from the upstream payload. RAW retains deleted records for audit; downstream models typically filter to active records unless analysing deletions."
+        data_tests: [not_null]
+
+
+  - name: raw_kobo_household
+    description: "RAW household-level fields extracted from each submission. One row per household record as provided by the payload (after flattening at submission level). Minimal shaping only, plus audit/lineage columns for traceability and replay."
+
+    config:
+      tags: ["raw", "kobo", "wash"]
+
+    columns:
+      - name: _loaded_at
+        description: "Pipeline load timestamp in Snowflake for this record. Used for incremental processing, late-arrival lookbacks, and freshness monitoring."
+        data_tests: [not_null]
+
+      - name: _batch_id
+        description: "Ingestion batch identifier assigned by the pipeline. Useful for batch reconciliation, debugging, and replay/backfill of a specific run."
+        data_tests: [not_null]
+
+      - name: _source_file
+        description: "Source object key / filename that produced this record (lineage back to S3/raw artefacts). Used to trace, reproduce, and investigate data issues."
+        data_tests: [not_null]
+
+      - name: _is_deleted
+        description: "Soft-delete indicator from the upstream payload. RAW retains deleted records for audit; downstream models typically filter to active records unless analysing deletions."
+        data_tests: [not_null]
+
+
+  - name: raw_kobo_member
+    description: "RAW member-level records flattened from the household members array in the payload. One row per member entry as captured in the submission. Minimal shaping only, plus audit/lineage columns for traceability and replay."
+
+    config:
+      tags: ["raw", "kobo", "wash"]
+
+    columns:
+      - name: _loaded_at
+        description: "Pipeline load timestamp in Snowflake for this record. Used for incremental processing, late-arrival lookbacks, and freshness monitoring."
+        data_tests: [not_null]
+
+      - name: _batch_id
+        description: "Ingestion batch identifier assigned by the pipeline. Useful for batch reconciliation, debugging, and replay/backfill of a specific run."
+        data_tests: [not_null]
+
+      - name: _source_file
+        description: "Source object key / filename that produced this record (lineage back to S3/raw artefacts). Used to trace, reproduce, and investigate data issues."
+        data_tests: [not_null]
+
+      - name: _is_deleted
+        description: "Soft-delete indicator from the upstream payload. RAW retains deleted records for audit; downstream models typically filter to active records unless analysing deletions."
+        data_tests: [not_null]
+  
+  - name: raw_kobo_waterpoint
+    description: "RAW water-point records flattened from the water_point section of the payload. One row per water point entry as captured in the submission. Minimal shaping only, plus audit/lineage columns for traceability and replay."
+
+    config:
+      tags: ["raw", "kobo", "wash"]
+    
+    columns:
+      - name: _loaded_at
+        description: "Pipeline load timestamp in Snowflake for this record. Used for incremental processing, late-arrival lookbacks, and freshness monitoring."
+        data_tests: [not_null]
+
+      - name: _batch_id
+        description: "Ingestion batch identifier assigned by the pipeline. Useful for batch reconciliation, debugging, and replay/backfill of a specific run."
+        data_tests: [not_null]
+
+      - name: _source_file
+        description: "Source object key / filename that produced this record (lineage back to S3/raw artefacts). Used to trace, reproduce, and investigate data issues."
+        data_tests: [not_null]
+
+      - name: _is_deleted
+        description: "Soft-delete indicator from the upstream payload. RAW retains deleted records for audit; downstream models typically filter to active records unless analysing deletions."
+        data_tests: [not_null]

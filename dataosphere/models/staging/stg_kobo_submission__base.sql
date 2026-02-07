@@ -20,7 +20,7 @@ WITH source as (
         _source_file,
         _is_deleted
     FROM
-        {{  source('raw', 'kobo_submission')  }}
+        {{  ref('raw_kobo_submission')  }}
 ), standardised AS (
     select
         -- business key
